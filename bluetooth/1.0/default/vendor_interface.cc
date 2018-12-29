@@ -50,6 +50,7 @@ bool recent_activity_flag;
 
 VendorInterface* g_vendor_interface = nullptr;
 std::mutex wakeup_mutex_;
+std::mutex init_mutex_;
 
 HC_BT_HDR* WrapPacketAndCopy(uint16_t event, const hidl_vec<uint8_t>& data) {
   size_t packet_size = data.size() + sizeof(HC_BT_HDR);
@@ -163,6 +164,7 @@ bool VendorInterface::Initialize(
     InitializeCompleteCallback initialize_complete_cb,
     PacketReadCallback event_cb, PacketReadCallback acl_cb,
     PacketReadCallback sco_cb) {
+    std::unique_lock<std::mutex> lock(init_mutex_);
   if (g_vendor_interface) {
     ALOGE("%s: No previous Shutdown()?", __func__);
     return false;
@@ -173,6 +175,7 @@ bool VendorInterface::Initialize(
 }
 
 void VendorInterface::Shutdown() {
+  std::unique_lock<std::mutex> lock(init_mutex_);
   LOG_ALWAYS_FATAL_IF(!g_vendor_interface, "%s: No Vendor interface!",
                       __func__);
   g_vendor_interface->Close();
