@@ -32,6 +32,7 @@ static const char* VENDOR_LIBRARY_SYMBOL_NAME =
     "BLUETOOTH_VENDOR_LIB_INTERFACE";
 
 static const int INVALID_FD = -1;
+#define HCI_VSC_READ_RAM 0xFC4D
 
 namespace {
 
@@ -371,6 +372,15 @@ void VendorInterface::HandleIncomingEvent(const hidl_vec<uint8_t>& hci_packet) {
   if (internal_command.cb != nullptr &&
       internal_command_event_match(hci_packet)) {
     HC_BT_HDR* bt_hdr = WrapPacketAndCopy(HCI_PACKET_TYPE_EVENT, hci_packet);
+
+    // Here to send hardware error to restart stack if VSC status is non-zero
+    uint16_t opcode = hci_packet[3] | (hci_packet[3 + 1] << 8);
+    if(opcode == HCI_VSC_READ_RAM  && hci_packet[6] != 0 )
+    {
+        ALOGE("Send a fake hardware error to stack");
+        hidl_vec<uint8_t> hardware_error_packet = {0x10,0x01,0x00};
+        event_cb_(hardware_error_packet);
+    }
 
     // The callbacks can send new commands, so don't zero after calling.
     tINT_CMD_CBACK saved_cb = internal_command.cb;
