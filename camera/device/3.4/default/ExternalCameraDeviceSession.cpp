@@ -1810,9 +1810,9 @@ bool ExternalCameraDeviceSession::OutputThread::threadLoop() {
 			*/
 	        YCbCrLayout input;
 	        input.y = (uint8_t*)req->mVirAddr;
-	        input.yStride = mYu12Frame->mWidth;
+	        input.yStride = tempFrameWidth; //mYu12Frame->mWidth;
 	        input.cb = (uint8_t*)(req->mVirAddr) + tempFrameWidth * tempFrameHeight;
-	        input.cStride = mYu12Frame->mWidth;
+	        input.cStride = tempFrameWidth; //mYu12Frame->mWidth;
 	        LOGD("format is BLOB or YV12, use software NV12ToI420");
 
 	        res = libyuv::NV12ToI420(
@@ -1826,11 +1826,9 @@ bool ExternalCameraDeviceSession::OutputThread::threadLoop() {
 	                mYu12FrameLayout.cStride,
 	                static_cast<uint8_t*>(mYu12FrameLayout.cr),
 	                mYu12FrameLayout.cStride,
-	                tempFrameWidth, tempFrameHeight);
+	                mYu12Frame->mWidth, mYu12Frame->mHeight);
         }
         ATRACE_END();
-
-
         if (res != 0) {
             // For some webcam, the first few V4L2 frames might be malformed...
             ALOGE("%s: Convert V4L2 frame to YU12 failed! res %d", __FUNCTION__, res);
@@ -1848,7 +1846,7 @@ bool ExternalCameraDeviceSession::OutputThread::threadLoop() {
         YCbCrLayout input;
         input.y = (uint8_t*)req->inData;
         input.yStride = mYu12Frame->mWidth;
-        input.cb = (uint8_t*)(req->inData) + tempFrameWidth * tempFrameHeight;
+        input.cb = (uint8_t*)(req->inData) + mYu12Frame->mWidth * mYu12Frame->mHeight;
         input.cStride = mYu12Frame->mWidth;
         LOGD("format is BLOB or YV12, use software YUYVtoI420");
 
@@ -2168,13 +2166,11 @@ Status ExternalCameraDeviceSession::OutputThread::allocateIntermediateBuffers(
         return Status::INTERNAL_ERROR;
     }
 
-    Size v4lAlign16Size = {(v4lSize.width + 15) & (~15), (v4lSize.height + 15) & (~15)};
-
     // Allocating intermediate YU12 frame
     if (mYu12Frame == nullptr || mYu12Frame->mWidth != v4lSize.width ||
             mYu12Frame->mHeight != v4lSize.height) {
         mYu12Frame.clear();
-        mYu12Frame = new AllocatedFrame(v4lAlign16Size.width, v4lAlign16Size.height);
+        mYu12Frame = new AllocatedFrame(v4lSize.width, v4lSize.height);
         int ret = mYu12Frame->allocate(&mYu12FrameLayout);
         if (ret != 0) {
             ALOGE("%s: allocating YU12 frame failed!", __FUNCTION__);
@@ -2198,7 +2194,7 @@ Status ExternalCameraDeviceSession::OutputThread::allocateIntermediateBuffers(
     // Allocating scaled buffers
     for (const auto& stream : streams) {
         Size sz = {stream.width, stream.height};
-        if (sz == v4lAlign16Size) {
+        if (sz == v4lSize) {
             continue; // Don't need an intermediate buffer same size as v4lBuffer
         }
         if (mIntermediateBuffers.count(sz) == 0) {
