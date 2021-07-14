@@ -25,7 +25,6 @@
 #include "utils/Mutex.h"
 
 #ifndef GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD
-#define GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD 0x08100002
 #endif
 
 #define LOGD(msg,...)       ALOGD("%s(%d): " msg ,__FUNCTION__,__LINE__,##__VA_ARGS__)
