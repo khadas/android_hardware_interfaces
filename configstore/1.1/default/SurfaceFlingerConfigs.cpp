@@ -159,10 +159,18 @@ Return<void> SurfaceFlingerConfigs::primaryDisplayOrientation(
     DisplayOrientation value = DisplayOrientation::ORIENTATION_0;
 
     int orientation = 0;
+    char val[PROPERTY_VALUE_MAX];
+    property_get("sys.lcd.exist", val, "0");
+    int exist = atoi(val) ;
+    if (exist == 1) {
+        specified = true;
+        orientation = 270;
+    } else {
 #ifdef PRIMARY_DISPLAY_ORIENTATION
-    specified = true;
-    orientation = PRIMARY_DISPLAY_ORIENTATION;
+        specified = true;
+        orientation = PRIMARY_DISPLAY_ORIENTATION;
 #endif
+    }
 
     switch (orientation) {
         case 0: {

@@ -4,6 +4,7 @@
 #include <android/hardware/configstore/1.1/ISurfaceFlingerConfigs.h>
 #include <hidl/MQDescriptor.h>
 #include <hidl/Status.h>
+#include <cutils/properties.h>
 
 namespace android {
 namespace hardware {

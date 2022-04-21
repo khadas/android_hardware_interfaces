@@ -16,6 +16,7 @@ LOCAL_SRC_FILES:= service.cpp
 include $(LOCAL_PATH)/surfaceflinger.mk
 
 LOCAL_SHARED_LIBRARIES := \
+    libcutils \
     libhidlbase \
     libhidltransport \
     libbase \
@@ -24,6 +25,9 @@ LOCAL_SHARED_LIBRARIES := \
     libutils \
     android.hardware.configstore@1.0 \
     android.hardware.configstore@1.1
+
+#LOCAL_C_INCLUDES := \
+    hardware/libhardware/include
 
 include $(BUILD_EXECUTABLE)
 
