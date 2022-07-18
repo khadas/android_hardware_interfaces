@@ -1602,6 +1602,24 @@ void convertFormat(int width,int height,int srcFormat,int dstFormat,void* srcAdd
     releasebuffer_handle(dst_handle);
 }
 
+void NV24ToNV12(unsigned char* tmpSrcPtr,unsigned char* tmpDstPtr, int width, int height) {
+    int i,j;
+    int width_uv_out = width / 2;
+    int height_uv_out = height / 2;
+
+    int uIn = width * height;
+    int uOut = width * height;
+    std::memcpy(tmpDstPtr, tmpSrcPtr, width*height);
+
+    for(i = 0; i < height_uv_out; i++) {
+        for(j = 0; j < width_uv_out; j++) {
+            int dstPos = uOut + i*width + j*2;
+            int srcPos = uIn + i*4*width + j*4;
+            std::memcpy(tmpDstPtr+dstPos, tmpSrcPtr+srcPos, 2);
+        }
+    }
+}
+
 bool ExternalCameraDeviceSession::FormatConvertThread::threadLoop() {
     std::shared_ptr<HalRequest> req;
     uint8_t* inData;
@@ -1619,6 +1637,7 @@ bool ExternalCameraDeviceSession::FormatConvertThread::threadLoop() {
             req->frameIn->mFourcc != V4L2_PIX_FMT_YUYV &&
             req->frameIn->mFourcc != V4L2_PIX_FMT_NV12 &&
             req->frameIn->mFourcc != V4L2_PIX_FMT_NV16 &&
+            req->frameIn->mFourcc != V4L2_PIX_FMT_NV24 &&
             req->frameIn->mFourcc != V4L2_PIX_FMT_BGR24  &&
             req->frameIn->mFourcc != V4L2_PIX_FMT_H264) {
 
@@ -1726,6 +1745,10 @@ bool ExternalCameraDeviceSession::FormatConvertThread::threadLoop() {
         req->mVirAddr = mVirAddr;
     } else if(req->frameIn->mFourcc == V4L2_PIX_FMT_NV16) {
         convertFormat(tmpW,tmpH,RK_FORMAT_YCbCr_422_SP,HAL_PIXEL_FORMAT_YCrCb_NV12,inData,(void *)mVirAddr);
+        req->mShareFd = mShareFd;
+        req->mVirAddr = mVirAddr;
+    } else if(req->frameIn->mFourcc == V4L2_PIX_FMT_NV24) {
+        NV24ToNV12((unsigned char*)inData,(unsigned char*)mVirAddr,req->frameIn->mWidth,req->frameIn->mHeight);
         req->mShareFd = mShareFd;
         req->mVirAddr = mVirAddr;
     }
@@ -2300,6 +2323,7 @@ bool ExternalCameraDeviceSession::OutputThread::threadLoop() {
           req->frameIn->mFourcc != V4L2_PIX_FMT_Z16 &&
           req->frameIn->mFourcc != V4L2_PIX_FMT_YUYV &&
           req->frameIn->mFourcc != V4L2_PIX_FMT_NV12 &&
+          req->frameIn->mFourcc != V4L2_PIX_FMT_NV24 &&
           req->frameIn->mFourcc != V4L2_PIX_FMT_NV16 &&
           req->frameIn->mFourcc != V4L2_PIX_FMT_BGR24  &&
           req->frameIn->mFourcc != V4L2_PIX_FMT_H264) {
@@ -2644,7 +2668,9 @@ bool ExternalCameraDeviceSession::OutputThread::threadLoop() {
        }
     }
 
-    if (isBlobOrYv12 && (req->frameIn->mFourcc == V4L2_PIX_FMT_BGR24 || req->frameIn->mFourcc == V4L2_PIX_FMT_NV16)) {
+    if (isBlobOrYv12 && (req->frameIn->mFourcc == V4L2_PIX_FMT_BGR24
+			    || req->frameIn->mFourcc == V4L2_PIX_FMT_NV24
+			    || req->frameIn->mFourcc == V4L2_PIX_FMT_NV16)) {
         ALOGV("%s NV12toI420", __FUNCTION__);
         ATRACE_BEGIN("NV12toI420");
         ALOGD("format is BLOB or YV12, use software NV12ToI420");
@@ -2890,6 +2916,24 @@ bool ExternalCameraDeviceSession::OutputThread::threadLoop() {
                     camera2::RgaCropScale::rga_scale_crop(
                         tempFrameWidth, tempFrameHeight, vir_addr,
                         RK_FORMAT_YCbCr_422_SP, handle_fd,
+                        halBuf.width, halBuf.height, 100, false, true,
+                        (halBuf.format == PixelFormat::YCRCB_420_SP), is16Align,
+                        true);
+                } else if (req->frameIn->mFourcc == V4L2_PIX_FMT_NV24){
+                    int handle_fd = -1, ret;
+                    const native_handle_t* tmp_hand = (const native_handle_t*)(*(halBuf.bufPtr));
+                    ret = ExCamGralloc4::get_share_fd(tmp_hand, &handle_fd);
+                    if (handle_fd == -1) {
+                        LOGE("convert tmp_hand to dst_fd error");
+                        return -EINVAL;
+                    }
+                    ALOGV("%s(%d): halBuf handle_fd(%d)", __FUNCTION__, __LINE__, handle_fd);
+                    ALOGV("%s(%d) halbuf_wxh(%dx%d) frameNumber(%d)", __FUNCTION__, __LINE__,
+                        halBuf.width, halBuf.height, req->frameNumber);
+                    unsigned long vir_addr =  reinterpret_cast<unsigned long>(req->mVirAddr);
+                    camera2::RgaCropScale::rga_scale_crop(
+                        tempFrameWidth, tempFrameHeight, vir_addr,
+                        HAL_PIXEL_FORMAT_YCrCb_NV12,handle_fd,
                         halBuf.width, halBuf.height, 100, false, true,
                         (halBuf.format == PixelFormat::YCRCB_420_SP), is16Align,
                         true);
@@ -4100,8 +4144,8 @@ Status ExternalCameraDeviceSession::configureStreams(
                 v4l2Fmt_tmp = fmt;
                 // since mSupportedFormats is sorted by width then height, the first matching fmt
                 // will be the smallest one with matching aspect ratio
-                if ((fmt.fourcc == V4L2_PIX_FMT_MJPEG) || (fmt.fourcc == V4L2_PIX_FMT_NV16) ||
-                (fmt.fourcc == V4L2_PIX_FMT_BGR24 ) ||
+                if ((fmt.fourcc == V4L2_PIX_FMT_MJPEG) || (fmt.fourcc == V4L2_PIX_FMT_NV16)
+				||(fmt.fourcc == V4L2_PIX_FMT_BGR24 ) || (fmt.fourcc == V4L2_PIX_FMT_NV24) ||
                     (fmt.fourcc == V4L2_PIX_FMT_NV12) || (fmt.fourcc == V4L2_PIX_FMT_H264)) {
                     v4l2Fmt_tmp = fmt;
                     break;

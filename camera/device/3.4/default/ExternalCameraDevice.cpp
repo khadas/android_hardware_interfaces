@@ -348,6 +348,7 @@ status_t ExternalCameraDevice::initAvailableCapabilities(
             case V4L2_PIX_FMT_YUYV: hasColor = true; break;
             case V4L2_PIX_FMT_NV12: hasColor = true; break;
             case V4L2_PIX_FMT_NV16: hasColor = true; break;
+            case V4L2_PIX_FMT_NV24: hasColor = true; break;
             case V4L2_PIX_FMT_BGR24 : hasColor = true; break;
             default: ALOGW("%s: Unsupported format found", __FUNCTION__);
         }
@@ -799,6 +800,9 @@ status_t ExternalCameraDevice::initOutputCharsKeys(
                 hasColor_h264 = true;
                 break;
             case V4L2_PIX_FMT_NV16:
+                hasColor_nv12 = true;
+                break;
+            case V4L2_PIX_FMT_NV24:
                 hasColor_nv12 = true;
                 break;
             case V4L2_PIX_FMT_BGR24 :
