@@ -286,16 +286,40 @@ int getCropRect(
         if (scaledOutH > inH) {
             ALOGE("%s: Output size %dx%d cannot be vertically cropped from input size %dx%d",
                     __FUNCTION__, outW, outH, inW, inH);
-            return -1;
-        }
-        scaledOutH = scaledOutH & ~0x1; // make it multiple of 2
+            // return -1;
+        // }
+        // scaledOutH = scaledOutH & ~0x1; // make it multiple of 2
+        uint64_t scaledOutW = static_cast<uint64_t>(outW) * inH / outH;
 
-        out->left = 0;
-        out->top = ((inH - scaledOutH) / 2) & ~0x1;
-        out->width = inW;
-        out->height = static_cast<int32_t>(scaledOutH);
-        ALOGV("%s: crop %dx%d to %dx%d: top %d, scaledH %d",
+        // out->left = 0;
+        // out->top = ((inH - scaledOutH) / 2) & ~0x1;
+        // out->width = inW;
+        // out->height = static_cast<int32_t>(scaledOutH);
+        // ALOGV("%s: crop %dx%d to %dx%d: top %d, scaledH %d",
+            if (scaledOutW > inW) {
+                ALOGE("%s: Output size %dx%d cannot be vertically cropped from input size %dx%d",
+                    __FUNCTION__, outW, outH, inW, inH);
+                return -1;
+            } else {
+                 scaledOutW = scaledOutW & ~0x1; // make it multiple of 2
+
+                 out->left = ((inW - scaledOutW) / 2) & ~0x1;
+                 out->top = 0;
+                 out->width = static_cast<int32_t>(scaledOutW);
+                 out->height = inH;
+                 ALOGV("%s: crop %dx%d to %dx%d: top %d, scaledW %d",
+                     __FUNCTION__, inW, inH, outW, outH, out->top, static_cast<int32_t>(scaledOutW));
+            }
+        } else {
+            scaledOutH = scaledOutH & ~0x1; // make it multiple of 2
+
+            out->left = 0;
+            out->top = ((inH - scaledOutH) / 2) & ~0x1;
+            out->width = inW;
+            out->height = static_cast<int32_t>(scaledOutH);
+            ALOGV("%s: crop %dx%d to %dx%d: top %d, scaledH %d",
                 __FUNCTION__, inW, inH, outW, outH, out->top, static_cast<int32_t>(scaledOutH));
+        }
     } else {
         uint64_t scaledOutW = static_cast<uint64_t>(outW) * inH / outH;
         if (scaledOutW > inW) {

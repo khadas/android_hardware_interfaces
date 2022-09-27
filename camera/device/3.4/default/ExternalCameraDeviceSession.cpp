@@ -4021,12 +4021,12 @@ Status ExternalCameraDeviceSession::configureStreams(
         uint32_t blobBufferSize) {
     ATRACE_CALL();
 
-    Status status = isStreamCombinationSupported(config, mSupportedFormats, mCfg);
+    /*Status status = isStreamCombinationSupported(config, mSupportedFormats, mCfg);
     if (status != Status::OK) {
         return status;
-    }
+    }*/
 
-    status = initStatus();
+    Status status = initStatus();
     if (status != Status::OK) {
         return status;
     }
@@ -4074,7 +4074,7 @@ Status ExternalCameraDeviceSession::configureStreams(
 
     // Now select a V4L2 format to produce all output streams
     float desiredAr = (mCroppingType == VERTICAL) ? kMaxAspectRatio : kMinAspectRatio;
-    uint32_t maxDim = 0;
+    uint32_t maxDim = 0, maxDimH;
     for (const auto& stream : config.streams) {
         float aspectRatio = ASPECT_RATIO(stream);
         ALOGI("%s: request stream %dx%d, format: 0x%x", __FUNCTION__, stream.width, stream.height, stream.format);
@@ -4087,6 +4087,7 @@ Status ExternalCameraDeviceSession::configureStreams(
         uint32_t dim = (mCroppingType == VERTICAL) ? stream.width : stream.height;
         if (dim > maxDim) {
             maxDim = dim;
+            maxDimH = (mCroppingType == VERTICAL) ? stream.height : stream.width;
         }
     }
     // Find the smallest format that matches the desired aspect ratio and is wide/high enough
@@ -4166,7 +4167,20 @@ Status ExternalCameraDeviceSession::configureStreams(
             }
         }
     }
-
+    if (v4l2Fmt.width == 0) {
+        // Cannot find exact good aspect ratio candidate, try to find a close one
+        int offset = INT_MAX;
+        for (const auto& fmt : mSupportedFormats) {
+            uint32_t dim = (mCroppingType == VERTICAL) ? fmt.width : fmt.height;
+            uint32_t dimH = (mCroppingType == VERTICAL) ? fmt.height : fmt.width;
+            if (dim >= maxDim && dimH >= maxDimH) {
+                if ((dim - maxDim) < offset) {
+                     offset = dim - maxDim;
+                     v4l2Fmt = fmt;
+                }
+            }
+        }
+    }
     if (v4l2Fmt.width == 0) {
         ALOGE("%s: unable to find a resolution matching (%s at least %d, aspect ratio %f)"
                 , __FUNCTION__, (mCroppingType == VERTICAL) ? "width" : "height",
