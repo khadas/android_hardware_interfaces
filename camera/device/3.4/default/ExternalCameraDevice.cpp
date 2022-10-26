@@ -449,7 +449,11 @@ status_t ExternalCameraDevice::initDefaultCharsKeys(
     UPDATE(ANDROID_LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION,
            &opticalStabilizationMode, 1);
 
-    const uint8_t facing = ANDROID_LENS_FACING_EXTERNAL;
+    //const uint8_t facing = ANDROID_LENS_FACING_EXTERNAL;
+	const char* dev = mCameraId.c_str();
+	int index = (int) (*(dev + (strlen(dev) - 1)) - '0');
+	const uint8_t facing = (index / 2) % 2 ? ANDROID_LENS_FACING_FRONT : ANDROID_LENS_FACING_BACK;
+
     UPDATE(ANDROID_LENS_FACING, &facing, 1);
 
     // android.noiseReduction
