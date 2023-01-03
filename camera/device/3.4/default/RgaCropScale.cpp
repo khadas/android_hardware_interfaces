@@ -252,6 +252,24 @@ int RgaCropScale::rga_scale_crop(
     return ret;
 }
 
+static void empty_structure(rga_buffer_t *src, rga_buffer_t *dst, rga_buffer_t *pat,
+                                im_rect *srect, im_rect *drect, im_rect *prect, im_opt_t *opt) {
+    if (src != NULL)
+        memset(src, 0, sizeof(*src));
+    if (dst != NULL)
+        memset(dst, 0, sizeof(*dst));
+    if (pat != NULL)
+        memset(pat, 0, sizeof(*pat));
+    if (srect != NULL)
+        memset(srect, 0, sizeof(*srect));
+    if (drect != NULL)
+        memset(drect, 0, sizeof(*drect));
+    if (prect != NULL)
+        memset(prect, 0, sizeof(*prect));
+    if (opt != NULL)
+        memset(opt, 0, sizeof(*opt));
+}
+
 int RgaCropScale::Im2dBlit(struct Params* in, struct Params* out)
 {
 	im_rect         src_rect;
