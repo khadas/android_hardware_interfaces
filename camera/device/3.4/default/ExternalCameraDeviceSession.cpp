@@ -99,6 +99,25 @@ constexpr int IOCTL_RETRY_SLEEP_US = 33000; // 33ms * MAX_RETRY = 0.5 seconds
 static constexpr int kDumpLockRetries = 50;
 static constexpr int kDumpLockSleep = 60000;
 
+int selectV4l2FD(int fd)
+{
+    int ts = 0;
+    fd_set fds;
+    struct timeval tv;
+    tv.tv_sec = 1;
+    tv.tv_usec =  1000 * 600;
+
+    FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+    ts = select(fd + 1, &fds, NULL, NULL, &tv);
+    if(ts == 0)
+    {
+        ALOGE("@%s(%d) select time out",__FUNCTION__,__LINE__);
+    }
+    return ts;
+}
+
+
 bool tryLock(Mutex& mutex)
 {
     bool locked = false;
@@ -1307,7 +1326,14 @@ int ExternalCameraDeviceSession::SubVideoThread::read_frame()
         buf.m.planes = planes;
         buf.length = FMT_NUM_PLANES;
     }
-
+    ALOGV("@%s(%d) selectV4l2FD begin ",__FUNCTION__,__LINE__);
+    int ts = selectV4l2FD(ctx->fd);
+    ALOGV("@%s(%d) selectV4l2FD done.",__FUNCTION__,__LINE__);
+    if(ts == 0)
+    {
+        ALOGE("@%s(%d) selectV4l2FD time out",__FUNCTION__,__LINE__);
+        errno_exit(ctx, "selectV4l2FD");
+    }
     if (-1 == xioctl(ctx->fd, VIDIOC_DQBUF, &buf))
         errno_exit(ctx, "VIDIOC_DQBUF");
 
@@ -3785,7 +3811,14 @@ int ExternalCameraDeviceSession::configureV4l2StreamLocked(
             buffer.m.planes = planes;
             buffer.length = PLANES_NUM;
         }
-
+        ALOGV("@%s(%d) cameraId:%s selectV4l2FD begin ",__FUNCTION__,__LINE__,mCameraId.c_str());
+        int ts = selectV4l2FD(mV4l2Fd.get());
+        ALOGV("@%s(%d) cameraId:%s selectV4l2FD done.",__FUNCTION__,__LINE__,mCameraId.c_str());
+        if(ts == 0)
+        {
+            ALOGE("@%s(%d) cameraId:%s selectV4l2FD time out",__FUNCTION__,__LINE__,mCameraId.c_str());
+            return ret;
+        }
         if (TEMP_FAILURE_RETRY(ioctl(mV4l2Fd.get(), VIDIOC_DQBUF, &buffer)) < 0) {
             ALOGE("%s: DQBUF fails: %s", __FUNCTION__, strerror(errno));
             return -errno;
@@ -3815,14 +3848,7 @@ int ExternalCameraDeviceSession::configureV4l2StreamLocked(
 sp<V4L2Frame> ExternalCameraDeviceSession::dequeueV4l2FrameLocked(/*out*/nsecs_t* shutterTs) {
     ATRACE_CALL();
     sp<V4L2Frame> ret = nullptr;
-    int ts;
-    fd_set fds;
-    struct timeval tv;
 
-    FD_ZERO(&fds);
-    FD_SET(mV4l2Fd.get(), &fds);
-    tv.tv_sec = kBufferWaitTimeoutSec;
-    tv.tv_usec = kBufferWaitTimeoutUSec;
     if (shutterTs == nullptr) {
         ALOGE("%s: shutterTs must not be null!", __FUNCTION__);
         return ret;
@@ -3851,12 +3877,12 @@ sp<V4L2Frame> ExternalCameraDeviceSession::dequeueV4l2FrameLocked(/*out*/nsecs_t
             buffer.m.planes = planes;
             buffer.length = PLANES_NUM;
         }
-        ALOGV("@%s(%d) select time begin ",__FUNCTION__,__LINE__);
-        ts = select(mV4l2Fd.get() + 1, &fds, NULL, NULL, &tv);
-        ALOGV("@%s(%d) select time done.",__FUNCTION__,__LINE__);
+        ALOGV("@%s(%d) cameraId:%s selectV4l2FD begin ",__FUNCTION__,__LINE__,mCameraId.c_str());
+        ts = selectV4l2FD(mV4l2Fd.get());
+        ALOGV("@%s(%d) cameraId:%s selectV4l2FD done.",__FUNCTION__,__LINE__,mCameraId.c_str());
         if(ts == 0)
         {
-            ALOGE("@%s(%d) select time out",__FUNCTION__,__LINE__);
+            ALOGE("@%s(%d) cameraId:%s selectV4l2FD time out",__FUNCTION__,__LINE__,mCameraId.c_str());
             return ret;
         }
         if (TEMP_FAILURE_RETRY(ioctl(mV4l2Fd.get(), VIDIOC_DQBUF, &buffer)) < 0) {
@@ -3883,14 +3909,14 @@ sp<V4L2Frame> ExternalCameraDeviceSession::dequeueV4l2FrameLocked(/*out*/nsecs_t
         buffer.m.planes = planes;
         buffer.length = PLANES_NUM;
     }
-    ALOGV("@%s(%d) select time begin ",__FUNCTION__,__LINE__);
-    ts = select(mV4l2Fd.get() + 1, &fds, NULL, NULL, &tv);
-    ALOGV("@%s(%d) select time done.",__FUNCTION__,__LINE__);
-	if(ts == 0)
-	{
-        ALOGE("@%s(%d) select time out",__FUNCTION__,__LINE__);
-		return ret;
-	}
+    ALOGV("@%s(%d) cameraId:%s selectV4l2FD begin ",__FUNCTION__,__LINE__,mCameraId.c_str());
+    int ts = selectV4l2FD(mV4l2Fd.get());
+    ALOGV("@%s(%d) cameraId:%s selectV4l2FD done.",__FUNCTION__,__LINE__,mCameraId.c_str());
+    if(ts == 0)
+    {
+        ALOGE("@%s(%d) cameraId:%s selectV4l2FD time out",__FUNCTION__,__LINE__,mCameraId.c_str());
+        return ret;
+    }
     if (TEMP_FAILURE_RETRY(ioctl(mV4l2Fd.get(), VIDIOC_DQBUF, &buffer)) < 0) {
         ALOGE("%s: DQBUF fails: %s", __FUNCTION__, strerror(errno));
         return ret;
