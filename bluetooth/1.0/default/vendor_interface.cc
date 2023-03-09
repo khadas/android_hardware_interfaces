@@ -184,7 +184,8 @@ void VendorInterface::Shutdown() {
 VendorInterface* VendorInterface::get() { return g_vendor_interface; }
 
 static char wifi_type[64] = {0};
-//extern "C" int check_wifi_chip_type_string(char *type);
+extern "C" int check_wifi_chip_type_string(char *type);
+
 
 bool VendorInterface::Open(InitializeCompleteCallback initialize_complete_cb,
                            PacketReadCallback event_cb,
@@ -195,8 +196,8 @@ bool VendorInterface::Open(InitializeCompleteCallback initialize_complete_cb,
   char vendor_lib_name[32];
 
   // Initialize vendor interface
-  //if (wifi_type[0] == 0)
-  //	  check_wifi_chip_type_string(wifi_type);
+  if (wifi_type[0] == 0)
+    check_wifi_chip_type_string(wifi_type);
   if ((0 == strncmp(wifi_type, "RTL", 3)) ||
       (0 == strncmp(wifi_type, "SSV", 3))) { // for ssv6051 wifi + rtl8761 bt
     strcpy(vendor_lib_name, VENDOR_REALTEK_LIBRARY_NAME);
