@@ -2494,6 +2494,11 @@ bool ExternalCameraDeviceSession::OutputThread::threadLoop() {
         {
             isJpegNeedCropScale = true;
         }
+    } else {
+        mapleft = 0;
+        maptop = 0;
+        mapwidth = mYu12Frame->mWidth;
+        mapheight = mYu12Frame->mHeight;
     }
 #endif
 
