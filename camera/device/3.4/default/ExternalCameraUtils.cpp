@@ -679,12 +679,50 @@ status_t fillCaptureResultCommon(
     const uint8_t requestPipelineMaxDepth = 4;
     UPDATE(md, ANDROID_REQUEST_PIPELINE_DEPTH, &requestPipelineMaxDepth, 1);
 
-    // android.scaler
-    const int32_t crop_region[] = {
-          activeArraySize.data.i32[0], activeArraySize.data.i32[1],
-          activeArraySize.data.i32[2], activeArraySize.data.i32[3],
-    };
-    UPDATE(md, ANDROID_SCALER_CROP_REGION, crop_region, ARRAY_SIZE(crop_region));
+    // If crop region not available, fill active array size as the default value
+    //# ANDROID_METADATA_Control android.scaler.cropRegion done
+    if (md.exists(ANDROID_SCALER_CROP_REGION)) {
+        ALOGV("%s: update crop region.", __FUNCTION__);
+        camera_metadata_entry entry = md.find(ANDROID_SCALER_CROP_REGION);
+        /**
+         * Cropping region is invalid if width is 0 or if the rectangle is not
+         * fully defined (you need 4 values)
+         */
+        //# ANDROID_METADATA_Dynamic android.scaler.cropRegion done
+        int32_t meteringRectangle[5];
+        float wratio = 1.0;
+        if (entry.count < 4 || entry.data.i32[2] == 0) {
+            //cropRegion is a reference and will alter captureSettings->cropRegion.
+
+            meteringRectangle[0] = 0;
+            meteringRectangle[1] = 0;
+            meteringRectangle[2] = activeArraySize.data.i32[2]; //width
+            meteringRectangle[3] = activeArraySize.data.i32[3]; //height
+            meteringRectangle[4] = 0;
+            // meteringRectangle is filling 4 coordinates and weight (5 values)
+            // here crop region only needs the rectangle, so we copy only 4.
+            UPDATE(md, ANDROID_SCALER_CROP_REGION, meteringRectangle, 4);
+        } else {
+            meteringRectangle[0] = entry.data.i32[0];
+            meteringRectangle[1] = entry.data.i32[1];
+            meteringRectangle[2] = entry.data.i32[0] + entry.data.i32[2];
+            meteringRectangle[3] = entry.data.i32[1] + entry.data.i32[3];
+            meteringRectangle[4] = 0;
+            wratio = (float)activeArraySize.data.i32[2] / entry.data.i32[2];
+
+            ALOGV("%s: update zoom ratio(%f).", __FUNCTION__, wratio);
+//            UPDATE(md, ANDROID_CONTROL_ZOOM_RATIO, &wratio, 1);
+//            float zoomRatioRange[] = {1.0f, 4.0};
+//            UPDATE(md, ANDROID_CONTROL_ZOOM_RATIO_RANGE, zoomRatioRange, 2);
+        }
+    } else {
+        // android.scaler
+        const int32_t crop_region[] = {
+              activeArraySize.data.i32[0], activeArraySize.data.i32[1],
+              activeArraySize.data.i32[2], activeArraySize.data.i32[3],
+        };
+        UPDATE(md, ANDROID_SCALER_CROP_REGION, crop_region, ARRAY_SIZE(crop_region));
+    }
 
     // android.sensor
     UPDATE(md, ANDROID_SENSOR_TIMESTAMP, &timestamp, 1);
