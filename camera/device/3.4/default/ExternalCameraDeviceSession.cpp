@@ -68,7 +68,7 @@
 
 #define RK_GRALLOC_USAGE_SPECIFY_STRIDE 1ULL << 30
 
-
+//#define CAMEAR_DUMP_META
 //#define DUMP_YUV
 typedef struct Camerawindow {
     int left;
@@ -1235,6 +1235,9 @@ Status ExternalCameraDeviceSession::processCaptureResult(std::shared_ptr<HalRequ
 
     // Fill capture result metadata
     fillCaptureResult(req->setting, req->shutterTs);
+#ifdef CAMEAR_DUMP_META
+    dumpResults(req->setting, result.frameNumber);
+#endif
     const camera_metadata_t *rawResult = req->setting.getAndLock();
     V3_2::implementation::convertToHidl(rawResult, &result.result);
     req->setting.unlock(rawResult);
@@ -4641,6 +4644,36 @@ status_t ExternalCameraDeviceSession::fillCaptureResult(
             mCameraCharacteristics.find(ANDROID_SENSOR_INFO_ACTIVE_ARRAY_SIZE);
 
     return fillCaptureResultCommon(md, timestamp, activeArraySize);
+}
+
+status_t ExternalCameraDeviceSession::dumpResults(
+        common::V1_0::helper::CameraMetadata &md, unsigned int reqId)
+{
+    static unsigned int count = 0;
+    count++;
+
+    std::string fileName("/data/dump/");
+    const char intent_val[7][20] = {"CUSTOM", "PREVIEW", "STILL_CAPTURE", "VIDEO_RECORD", "VIDEO_SNAPSHOT", "ZERO_SHUTTER_LAG", "MANUAL"};
+
+    camera_metadata_entry_t entry;
+    uint8_t intent = 0;
+    entry = md.find(ANDROID_CONTROL_CAPTURE_INTENT);
+    if (entry.count == 1) {
+        intent = entry.data.u8[0];
+    }
+    std::string strIntentName = intent_val[intent];
+
+    fileName += "dumpmeta_" + mCameraId + "_" + strIntentName  + "_result_" + std::to_string(reqId);
+    ALOGV("%s filename is %s", __FUNCTION__, fileName.data());
+    int fd = open(fileName.data(), O_RDWR | O_CREAT, 0666);
+    if (fd != -1) {
+        md.dump(fd, 2);
+    } else {
+        LOGE("dumpResult: open failed, errmsg: %s\n", strerror(errno));
+    }
+    close(fd);
+
+    return OK;
 }
 
 #undef ARRAY_SIZE

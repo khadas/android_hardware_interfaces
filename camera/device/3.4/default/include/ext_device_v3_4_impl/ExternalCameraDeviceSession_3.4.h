@@ -321,6 +321,7 @@ protected:
     Status initStatus() const;
     status_t initDefaultRequests();
     status_t fillCaptureResult(common::V1_0::helper::CameraMetadata& md, nsecs_t timestamp);
+    status_t dumpResults(common::V1_0::helper::CameraMetadata& md, unsigned int reqId);
     Status configureStreams(const V3_2::StreamConfiguration&,
             V3_3::HalStreamConfiguration* out,
             // Only filled by configureStreams_3_4, and only one blob stream supported
