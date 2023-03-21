@@ -796,6 +796,8 @@ bool ExternalCameraDevice::calculateMinFps(
         fpsRanges.push_back(framerate);
     }
     minFps /= 2;
+   if (0 == minFps)
+       minFps = 1;
     int64_t maxFrameDuration = 1000000000LL / minFps;
 
     UPDATE(ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES, fpsRanges.data(),
