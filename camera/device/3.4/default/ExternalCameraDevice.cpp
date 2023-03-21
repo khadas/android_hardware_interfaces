@@ -54,7 +54,7 @@ constexpr int MAX_RETRY = 5; // Allow retry v4l2 open failures a few times.
 constexpr int OPEN_RETRY_SLEEP_US = 100000; // 100ms * MAX_RETRY = 0.5 seconds
 
 static uint Camera_Resolution[][2] = {{176,144},{320,240},{352,288},
-                     {640,480},{720,540},{800,600},/*{1280,720},{1280,960},{1920,1080},{2048,1536},{2560,1440},{2592,1944},{2592,1456},*/
+                     {640,480},/*{720,540},{800,600},/*{1280,720},{1280,960},{1920,1080},{2048,1536},{2560,1440},{2592,1944},{2592,1456},*/
                      {0,0}};
 
 } // anonymous namespace
