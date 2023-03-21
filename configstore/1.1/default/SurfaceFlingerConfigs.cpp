@@ -160,11 +160,17 @@ Return<void> SurfaceFlingerConfigs::primaryDisplayOrientation(
 
     int orientation = 0;
     char val[PROPERTY_VALUE_MAX];
+    char val2[PROPERTY_VALUE_MAX];
     property_get("sys.lcd.exist", val, "0");
     int exist = atoi(val) ;
     if (exist == 1) {
         specified = true;
-        orientation = 270;
+        property_get("sys.lcd.reverse", val2, "0");
+        if(atoi(val2) == 2) {
+            orientation = 0;//TS101 no need to rotate
+        } else {
+            orientation = 270;//old_TS050 or new_TS050 itself is a vertical screen so need to rotate 270
+        }
     } else {
 #ifdef PRIMARY_DISPLAY_ORIENTATION
         specified = true;
