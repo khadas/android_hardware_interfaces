@@ -147,7 +147,8 @@ static inline void sBufferDescriptorInfo(std::string name, uint32_t width, uint3
     outDescriptorInfo->height = height;
     outDescriptorInfo->layerCount = layerCount;
     outDescriptorInfo->format = static_cast<hardware::graphics::common::V1_2::PixelFormat>(format);
-    outDescriptorInfo->usage = usage;
+    outDescriptorInfo->usage = RK_GRALLOC_USAGE_RGA_ACCESS|usage;
+    ALOGD("limit alloc buf in 4G!\n");
     outDescriptorInfo->reservedSize = 0;
 }
 
