@@ -790,10 +790,17 @@ bool ExternalCameraDevice::calculateMinFps(
 
     std::vector<int32_t> fpsRanges;
     // FPS ranges
-    for (const auto& framerate : framerates) {
-        // Empirical: webcams often have close to 2x fps error and cannot support fixed fps range
-        fpsRanges.push_back(framerate / 2);
-        fpsRanges.push_back(framerate);
+    if (framerates.find(30) != framerates.end()) {
+        fpsRanges.push_back(15);
+        fpsRanges.push_back(30);
+    } else {
+        int i = 0;
+        for (const auto& framerate : framerates) {
+            // Empirical: webcams often have close to 2x fps error and cannot support fixed fps range
+            fpsRanges.push_back(framerate / 2);
+            fpsRanges.push_back(framerate);
+            ALOGV("%s: framerate[%d] = %d", __FUNCTION__, i++, framerate);
+        }
     }
     minFps /= 2;
    if (0 == minFps)
