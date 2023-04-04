@@ -140,12 +140,15 @@ cc_library_shared {
         "android.hardware.graphics.mapper@2.1",
         "android.hardware.graphics.mapper@3.0",
         "android.hardware.graphics.mapper@4.0",
-	"rockchip.hardware.hdmi@1.0",
+        "rockchip.hardware.hdmi@1.0",
+        "libbinder_ndk",
+        "android.hardware.graphics.allocator-V1-ndk",
     ],
     static_libs: [
         "android.hardware.camera.common@1.0-helper",
         "libgrallocusage",
         "libft2.nodep",
+        "libaidlcommonsupport",
     ],
     // bufferhub is not used when building libgui for vendors
     target: {
@@ -163,6 +166,7 @@ cc_library_shared {
         "-Wno-error",
         "-Wno-unused",
         "-DRK_HW_JPEG_DECODER",
+        "-DANDROID_VERSION_ABOVE_13_X",
     ],
 
     product_variables: {
