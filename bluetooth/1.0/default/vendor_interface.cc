@@ -29,6 +29,7 @@
 
 static const char* VENDOR_LIBRARY_NAME = "libbt-vendor.so";
 static const char* VENDOR_REALTEK_LIBRARY_NAME = "libbt-vendor-realtek.so";
+static const char* VENDOR_AIC_LIBRARY_NAME = "libbt-vendor-aic.so";
 static const char* VENDOR_LIBRARY_SYMBOL_NAME =
     "BLUETOOTH_VENDOR_LIB_INTERFACE";
 
@@ -198,7 +199,12 @@ bool VendorInterface::Open(InitializeCompleteCallback initialize_complete_cb,
   // Initialize vendor interface
   if (wifi_type[0] == 0)
     check_wifi_chip_type_string(wifi_type);
-  if ((0 == strncmp(wifi_type, "RTL", 3)) ||
+
+
+  if ((0 == strncmp(wifi_type, "AIC", 3))) {
+	  ALOGE("%s try to open %s \n", __func__, VENDOR_AIC_LIBRARY_NAME);
+	  strcpy(vendor_lib_name, VENDOR_AIC_LIBRARY_NAME);
+  } else if ((0 == strncmp(wifi_type, "RTL", 3)) ||
       (0 == strncmp(wifi_type, "SSV", 3))) { // for ssv6051 wifi + rtl8761 bt
     strcpy(vendor_lib_name, VENDOR_REALTEK_LIBRARY_NAME);
   } else {
