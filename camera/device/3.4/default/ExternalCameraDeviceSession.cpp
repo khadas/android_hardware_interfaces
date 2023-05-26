@@ -2447,13 +2447,36 @@ bool ExternalCameraDeviceSession::OutputThread::threadLoop() {
                 mYu12TempLayout.cStride,
                 mTempYu12Frame->mWidth, mTempYu12Frame->mHeight);
         ATRACE_END();
+        bool isMirror = false;
+        ALOGE("---zc res:%d", res);
+        if (res == 0) {
+            camera_metadata_ro_entry entry = mCameraCharacteristics.find(ANDROID_SENSOR_ORIENTATION);
+            int orientation = entry.data.i32[0];
+            entry = mCameraCharacteristics.find(ANDROID_LENS_FACING);
+            int facing = entry.data.u8[0];
+            ALOGE("---zc sensor orientation:%d facing:%d,ANDROID_LENS_FACING_FRONT:%d", orientation, facing, ANDROID_LENS_FACING_FRONT);
+            if (facing == ANDROID_LENS_FACING_FRONT) {
+                ALOGE("---zc I420Mirror");
+                res = libyuv::I420Mirror(static_cast<uint8_t*>(mYu12TempLayout.y), mYu12TempLayout.yStride,
+                    static_cast<uint8_t*>(mYu12TempLayout.cb), mYu12TempLayout.cStride,
+                    static_cast<uint8_t*>(mYu12TempLayout.cr), mYu12TempLayout.cStride,
+                    static_cast<uint8_t*>(mInternalYu12FrameLayout.y), mInternalYu12FrameLayout.yStride,
+                    static_cast<uint8_t*>(mInternalYu12FrameLayout.cb), mInternalYu12FrameLayout.cStride,
+                    static_cast<uint8_t*>(mInternalYu12FrameLayout.cr), mInternalYu12FrameLayout.cStride,
+                    mInternalYu12Frame->mWidth, mInternalYu12Frame->mHeight);
+                if (res == 0) isMirror = true;
+            }
+        }
         IMapper::Rect inputCrop;
         inputCrop.left = mapleft;
         inputCrop.top = maptop;
         inputCrop.width = mapwidth;
         inputCrop.height = mapheight;
         YCbCrLayout croppedLayout;
-        res = mTempYu12Frame->getCroppedLayout(inputCrop, &croppedLayout);
+        if (isMirror)
+            res = mInternalYu12Frame->getCroppedLayout(inputCrop, &croppedLayout);
+        else 
+            res = mTempYu12Frame->getCroppedLayout(inputCrop, &croppedLayout);
         if (res != 0) {
             ALOGE("%s(%d): failed to crop input image %dx%d to output size %dx%d",
                     __FUNCTION__, __LINE__, mTempYu12Frame->mWidth, mTempYu12Frame->mHeight, inputCrop.width, inputCrop.height);
@@ -3030,6 +3053,15 @@ bool ExternalCameraDeviceSession::OutputThread::threadLoop() {
                     ALOGV("%s(%d) halbuf_wxh(%dx%d) frameNumber(%d)", __FUNCTION__, __LINE__,
                         halBuf.width, halBuf.height, req->frameNumber);
 
+                    camera_metadata_ro_entry entry = mCameraCharacteristics.find(ANDROID_LENS_FACING);
+                    int facing = entry.data.u8[0];
+                    bool isFront = facing == ANDROID_LENS_FACING_FRONT;
+                    bool isVideo = !((halBuf.usage & GRALLOC_USAGE_HW_TEXTURE) == GRALLOC_USAGE_HW_TEXTURE);
+                    bool mirror = (isFront) && (isVideo);
+                    ALOGV("---zc usage:%" PRIx64, static_cast<uint64_t>(halBuf.usage));
+                    ALOGV("---zc GRALLOC_USAGE_HW_TEXTURE:%x,VIDEO_ENCODER:%x", GRALLOC_USAGE_HW_TEXTURE, BufferUsage::VIDEO_ENCODER);
+                    ALOGV("---zc isFront:%d,isVideo:%d,mirror:%d", isFront, isVideo, mirror);
+
                 if (isJpegNeedCropScale) {
                     // do digital zoom
                     //camera2::RgaCropScale::Params rgain, rgaout;
@@ -3047,7 +3079,7 @@ bool ExternalCameraDeviceSession::OutputThread::threadLoop() {
                     rgaout.fd = handle_fd;
                     rgaout.fmt = HAL_PIXEL_FORMAT_YCrCb_NV12;
                     //rgaout.vir_addr = reinterpret_cast<char*>(halBuf.bufPtr);
-                    rgaout.mirror = false;
+                    rgaout.mirror = mirror;
                     rgaout.width = halBuf.width;
                     rgaout.height = halBuf.height;
                     rgaout.offset_x = 0;
@@ -3063,7 +3095,7 @@ bool ExternalCameraDeviceSession::OutputThread::threadLoop() {
                     camera2::RgaCropScale::rga_scale_crop(
                         tempFrameWidth, tempFrameHeight, req->mShareFd,
                         HAL_PIXEL_FORMAT_YCrCb_NV12, handle_fd,
-                        halBuf.width, halBuf.height, 100, false, true,
+                        halBuf.width, halBuf.height, 100, mirror, true,
                         (halBuf.format == PixelFormat::YCRCB_420_SP), is16Align,
                         req->frameIn->mFourcc == V4L2_PIX_FMT_YUYV);
                     ALOGV("%s: ANDROID_SCALER_CROP_REGION not set",__FUNCTION__);
@@ -3166,6 +3198,17 @@ Status ExternalCameraDeviceSession::OutputThread::allocateIntermediateBuffers(
             return Status::INTERNAL_ERROR;
         }
     }
+    // Allocating Temp mirror frame
+    if (mInternalYu12Frame == nullptr || mInternalYu12Frame->mWidth != v4lSize.width ||
+            mInternalYu12Frame->mHeight != v4lSize.height) {
+        mInternalYu12Frame.clear();
+        mInternalYu12Frame = new AllocatedFrame(v4lSize.width, v4lSize.height);
+        int ret = mInternalYu12Frame->allocate(&mInternalYu12FrameLayout);
+        if (ret != 0) {
+            ALOGE("%s: allocating YU12 temp mirror frame failed!", __FUNCTION__);
+            return Status::INTERNAL_ERROR;
+        }
+    }        
 
     // Allocating Temp Digital zoom frame
     if (mTempYu12Frame == nullptr || mTempYu12Frame->mWidth != v4lSize.width ||

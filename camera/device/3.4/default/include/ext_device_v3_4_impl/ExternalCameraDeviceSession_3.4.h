@@ -188,11 +188,13 @@ struct ExternalCameraDeviceSession : public virtual RefBase,
         sp<AllocatedFrame> mYu12Frame;
         sp<AllocatedFrame> mYu12ThumbFrame;
         sp<AllocatedFrame> mTempYu12Frame;
+        sp<AllocatedFrame> mInternalYu12Frame;
         std::unordered_map<Size, sp<AllocatedFrame>, SizeHasher> mIntermediateBuffers;
         std::unordered_map<Size, sp<AllocatedFrame>, SizeHasher> mScaledYu12Frames;
         YCbCrLayout mYu12FrameLayout;
         YCbCrLayout mYu12ThumbFrameLayout;
         YCbCrLayout mYu12TempLayout;
+        YCbCrLayout mInternalYu12FrameLayout;
         uint32_t mBlobBufferSize = 0; // 0 -> HAL derive buffer size, else: use given size
 
         std::string mExifMake;
