@@ -48,13 +48,13 @@ Return<void> DevicesFactory::openDevice(IDevicesFactory::Device device, openDevi
     }
 #if SUPPORT_MULTIAUDIO
     if ((int32_t)device == 5) {
-        return openDevice(AUDIO_HARDWARE_MODULE_ID_HDMI, _hidl_cb);
+        return openDevice(AUDIO_HARDWARE_MODULE_ID_EXT_1, _hidl_cb);
     } else if ((int32_t)device == 6) {
-        return openDevice(AUDIO_HARDWARE_MODULE_ID_SPDIF, _hidl_cb);
+        return openDevice(AUDIO_HARDWARE_MODULE_ID_EXT_2, _hidl_cb);
     } else if ((int32_t)device == 7) {
-        return openDevice(AUDIO_HARDWARE_MODULE_ID_HDMI_1, _hidl_cb);
+        return openDevice(AUDIO_HARDWARE_MODULE_ID_EXT_3, _hidl_cb);
     } else if ((int32_t)device == 8) {
-        return openDevice(AUDIO_HARDWARE_MODULE_ID_SPDIF_1, _hidl_cb);
+        return openDevice(AUDIO_HARDWARE_MODULE_ID_EXT_4, _hidl_cb);
     }
 #endif
     _hidl_cb(Result::INVALID_ARGUMENTS, nullptr);
