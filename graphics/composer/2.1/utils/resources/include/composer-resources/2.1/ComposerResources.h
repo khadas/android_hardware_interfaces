@@ -181,6 +181,8 @@ class ComposerResources {
 
     bool mustValidateDisplay(Display display);
 
+    std::recursive_mutex& getLock() { return mDisplayResourcesMutex; };
+
     // When a buffer in the cache is replaced by a new one, we must keep it
     // alive until it has been replaced in ComposerHal because it is still using
     // the old buffer.
@@ -242,7 +244,7 @@ class ComposerResources {
 
     ComposerHandleImporter mImporter;
 
-    std::mutex mDisplayResourcesMutex;
+    std::recursive_mutex mDisplayResourcesMutex;
     std::unordered_map<Display, std::unique_ptr<ComposerDisplayResource>> mDisplayResources;
 
   private:

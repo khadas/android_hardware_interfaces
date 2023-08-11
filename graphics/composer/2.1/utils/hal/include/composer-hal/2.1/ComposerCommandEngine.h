@@ -367,6 +367,8 @@ class ComposerCommandEngine : protected CommandReaderBase {
 
         const native_handle_t* buffer;
         ComposerResources::ReplacedHandle replacedBuffer(true);
+
+        std::lock_guard<std::recursive_mutex> lock(mResources->getLock());
         auto err = mResources->getLayerBuffer(mCurrentDisplay, mCurrentLayer, slot, useCache,
                                               rawHandle, &buffer, &replacedBuffer);
         if (err == Error::NONE) {
