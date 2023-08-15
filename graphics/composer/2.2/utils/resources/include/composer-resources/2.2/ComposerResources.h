@@ -70,7 +70,7 @@ class ComposerResources : public V2_1::hal::ComposerResources {
             return error;
         }
 
-        std::lock_guard<std::mutex> lock(mDisplayResourcesMutex);
+        std::lock_guard<std::recursive_mutex> lock(mDisplayResourcesMutex);
 
         auto iter = mDisplayResources.find(display);
         if (iter == mDisplayResources.end()) {
