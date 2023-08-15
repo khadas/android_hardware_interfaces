@@ -17,7 +17,6 @@
 #define LOG_TAG "ComposerResources"
 
 #include "composer-resources/2.1/ComposerResources.h"
-
 namespace android {
 namespace hardware {
 namespace graphics {
@@ -296,7 +295,7 @@ bool ComposerResources::init() {
 }
 
 void ComposerResources::clear(RemoveDisplay removeDisplay) {
-    std::lock_guard<std::mutex> lock(mDisplayResourcesMutex);
+    std::lock_guard<std::recursive_mutex> lock(mDisplayResourcesMutex);
     for (const auto& displayKey : mDisplayResources) {
         Display display = displayKey.first;
         const ComposerDisplayResource& displayResource = *displayKey.second;
@@ -312,7 +311,7 @@ bool ComposerResources::hasDisplay(Display display) {
 Error ComposerResources::addPhysicalDisplay(Display display) {
     auto displayResource = createDisplayResource(ComposerDisplayResource::DisplayType::PHYSICAL, 0);
 
-    std::lock_guard<std::mutex> lock(mDisplayResourcesMutex);
+    std::lock_guard<std::recursive_mutex> lock(mDisplayResourcesMutex);
     auto result = mDisplayResources.emplace(display, std::move(displayResource));
     return result.second ? Error::NONE : Error::BAD_DISPLAY;
 }
@@ -321,19 +320,19 @@ Error ComposerResources::addVirtualDisplay(Display display, uint32_t outputBuffe
     auto displayResource = createDisplayResource(ComposerDisplayResource::DisplayType::VIRTUAL,
                                                  outputBufferCacheSize);
 
-    std::lock_guard<std::mutex> lock(mDisplayResourcesMutex);
+    std::lock_guard<std::recursive_mutex> lock(mDisplayResourcesMutex);
     auto result = mDisplayResources.emplace(display, std::move(displayResource));
     return result.second ? Error::NONE : Error::BAD_DISPLAY;
 }
 
 Error ComposerResources::removeDisplay(Display display) {
-    std::lock_guard<std::mutex> lock(mDisplayResourcesMutex);
+    std::lock_guard<std::recursive_mutex> lock(mDisplayResourcesMutex);
     return mDisplayResources.erase(display) > 0 ? Error::NONE : Error::BAD_DISPLAY;
 }
 
 Error ComposerResources::setDisplayClientTargetCacheSize(Display display,
                                                          uint32_t clientTargetCacheSize) {
-    std::lock_guard<std::mutex> lock(mDisplayResourcesMutex);
+    std::lock_guard<std::recursive_mutex> lock(mDisplayResourcesMutex);
     ComposerDisplayResource* displayResource = findDisplayResourceLocked(display);
     if (!displayResource) {
         return Error::BAD_DISPLAY;
@@ -344,7 +343,7 @@ Error ComposerResources::setDisplayClientTargetCacheSize(Display display,
 }
 
 Error ComposerResources::getDisplayClientTargetCacheSize(Display display, size_t* outCacheSize) {
-    std::lock_guard<std::mutex> lock(mDisplayResourcesMutex);
+    std::lock_guard<std::recursive_mutex> lock(mDisplayResourcesMutex);
     ComposerDisplayResource* displayResource = findDisplayResourceLocked(display);
     if (!displayResource) {
         return Error::BAD_DISPLAY;
@@ -354,7 +353,7 @@ Error ComposerResources::getDisplayClientTargetCacheSize(Display display, size_t
 }
 
 Error ComposerResources::getDisplayOutputBufferCacheSize(Display display, size_t* outCacheSize) {
-    std::lock_guard<std::mutex> lock(mDisplayResourcesMutex);
+    std::lock_guard<std::recursive_mutex> lock(mDisplayResourcesMutex);
     ComposerDisplayResource* displayResource = findDisplayResourceLocked(display);
     if (!displayResource) {
         return Error::BAD_DISPLAY;
@@ -366,7 +365,7 @@ Error ComposerResources::getDisplayOutputBufferCacheSize(Display display, size_t
 Error ComposerResources::addLayer(Display display, Layer layer, uint32_t bufferCacheSize) {
     auto layerResource = createLayerResource(bufferCacheSize);
 
-    std::lock_guard<std::mutex> lock(mDisplayResourcesMutex);
+    std::lock_guard<std::recursive_mutex> lock(mDisplayResourcesMutex);
     ComposerDisplayResource* displayResource = findDisplayResourceLocked(display);
     if (!displayResource) {
         return Error::BAD_DISPLAY;
@@ -377,7 +376,7 @@ Error ComposerResources::addLayer(Display display, Layer layer, uint32_t bufferC
 }
 
 Error ComposerResources::removeLayer(Display display, Layer layer) {
-    std::lock_guard<std::mutex> lock(mDisplayResourcesMutex);
+    std::lock_guard<std::recursive_mutex> lock(mDisplayResourcesMutex);
     ComposerDisplayResource* displayResource = findDisplayResourceLocked(display);
     if (!displayResource) {
         return Error::BAD_DISPLAY;
@@ -419,7 +418,7 @@ Error ComposerResources::getLayerSidebandStream(Display display, Layer layer,
 }
 
 void ComposerResources::setDisplayMustValidateState(Display display, bool mustValidate) {
-    std::lock_guard<std::mutex> lock(mDisplayResourcesMutex);
+    std::lock_guard<std::recursive_mutex> lock(mDisplayResourcesMutex);
     auto* displayResource = findDisplayResourceLocked(display);
     if (displayResource) {
         displayResource->setMustValidateState(mustValidate);
@@ -427,7 +426,7 @@ void ComposerResources::setDisplayMustValidateState(Display display, bool mustVa
 }
 
 bool ComposerResources::mustValidateDisplay(Display display) {
-    std::lock_guard<std::mutex> lock(mDisplayResourcesMutex);
+    std::lock_guard<std::recursive_mutex> lock(mDisplayResourcesMutex);
     auto* displayResource = findDisplayResourceLocked(display);
     if (displayResource) {
         return displayResource->mustValidate();
@@ -459,6 +458,7 @@ Error ComposerResources::getHandle(Display display, Layer layer, uint32_t slot, 
                                    ReplacedHandle* outReplacedHandle) {
     Error error;
 
+
     // import the raw handle (or ignore raw handle when fromCache is true)
     const native_handle_t* importedHandle = nullptr;
     if (!fromCache) {
@@ -470,7 +470,7 @@ Error ComposerResources::getHandle(Display display, Layer layer, uint32_t slot, 
         }
     }
 
-    std::lock_guard<std::mutex> lock(mDisplayResourcesMutex);
+    std::lock_guard<std::recursive_mutex> lock(mDisplayResourcesMutex);
 
     // find display/layer resource
     const bool needLayerResource = (cache == ComposerResources::Cache::LAYER_BUFFER ||
