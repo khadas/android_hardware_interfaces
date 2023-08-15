@@ -54,7 +54,7 @@ Error ComposerResources::getDisplayReadbackBuffer(Display display, const native_
         return error;
     }
 
-    std::lock_guard<std::mutex> lock(mDisplayResourcesMutex);
+    std::lock_guard<std::muterecursive_mutexx> lock(mDisplayResourcesMutex);
 
     auto iter = mDisplayResources.find(display);
     if (iter == mDisplayResources.end()) {
