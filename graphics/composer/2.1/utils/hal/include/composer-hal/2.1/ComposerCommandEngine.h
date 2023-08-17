@@ -220,6 +220,7 @@ class ComposerCommandEngine : protected CommandReaderBase {
         bool closeFence = true;
 
         const native_handle_t* clientTarget;
+        std::lock_guard<std::recursive_mutex> lock(mResources->getLock());
         ComposerResources::ReplacedHandle replacedClientTarget(true);
         auto err = mResources->getDisplayClientTarget(mCurrentDisplay, slot, useCache, rawHandle,
                                                       &clientTarget, &replacedClientTarget);
@@ -251,6 +252,7 @@ class ComposerCommandEngine : protected CommandReaderBase {
         bool closeFence = true;
 
         const native_handle_t* outputBuffer;
+        std::lock_guard<std::recursive_mutex> lock(mResources->getLock());
         ComposerResources::ReplacedHandle replacedOutputBuffer(true);
         auto err = mResources->getDisplayOutputBuffer(mCurrentDisplay, slot, useCache, rawhandle,
                                                       &outputBuffer, &replacedOutputBuffer);
