@@ -94,6 +94,7 @@ class ComposerClientImpl : public Interface {
          void onHotplug(Display display, IComposerCallback::Connection connected) {
              if (connected == IComposerCallback::Connection::CONNECTED) {
                  if (mResources->hasDisplay(display)) {
+                    std::lock_guard<std::recursive_mutex> lock(mResources->getLock());
                      // This is a subsequent hotplug "connected" for a display. This signals a
                      // display change and thus the framework may want to reallocate buffers. We
                      // need to free all cached handles, since they are holding a strong reference
