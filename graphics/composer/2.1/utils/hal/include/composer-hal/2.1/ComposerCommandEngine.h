@@ -36,6 +36,11 @@ namespace composer {
 namespace V2_1 {
 namespace hal {
 
+#define RK_BUFFER_SLOT_SHIFT 8
+#define RK_BUFFER_CACHE_SHIFT 16
+#define RK_BUFFER_USE_CACHE_FLAG 1
+#define RK_BUFFER_USE_UNCACHE_FLAG (1 << 1)
+
 // TODO own a CommandReaderBase rather than subclassing
 class ComposerCommandEngine : protected CommandReaderBase {
    public:
@@ -374,6 +379,17 @@ class ComposerCommandEngine : protected CommandReaderBase {
         auto err = mResources->getLayerBuffer(mCurrentDisplay, mCurrentLayer, slot, useCache,
                                               rawHandle, &buffer, &replacedBuffer);
         if (err == Error::NONE) {
+            int32_t cache_slot_mask = ((slot & 0xff) << RK_BUFFER_SLOT_SHIFT);
+            if(useCache){
+              cache_slot_mask |= (RK_BUFFER_USE_CACHE_FLAG << RK_BUFFER_CACHE_SHIFT);
+            }else{
+              cache_slot_mask |= (RK_BUFFER_USE_UNCACHE_FLAG << RK_BUFFER_CACHE_SHIFT);
+            }
+            err = mHal->setLayerBuffer(mCurrentDisplay, mCurrentLayer, buffer, cache_slot_mask * (-1));
+            if (err == Error::NONE) {
+              ALOGV("slot=%d useCache=%d cache_slot_mask=0x%x", slot, useCache, cache_slot_mask);
+            }
+
             err = mHal->setLayerBuffer(mCurrentDisplay, mCurrentLayer, buffer, fence);
             if (err == Error::NONE) {
                 closeFence = false;
