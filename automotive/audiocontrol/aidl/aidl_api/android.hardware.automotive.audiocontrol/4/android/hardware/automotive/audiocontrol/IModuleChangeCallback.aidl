@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,16 +32,7 @@
 // later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.hardware.automotive.audiocontrol;
-@Backing(type="int") @VintfStability
-enum Reasons {
-  FORCED_MASTER_MUTE = 0x1,
-  REMOTE_MUTE = 0x2,
-  TCU_MUTE = 0x4,
-  ADAS_DUCKING = 0x8,
-  NAV_DUCKING = 0x10,
-  PROJECTION_DUCKING = 0x20,
-  THERMAL_LIMITATION = 0x40,
-  SUSPEND_EXIT_VOL_LIMITATION = 0x80,
-  EXTERNAL_AMP_VOL_FEEDBACK = 0x100,
-  OTHER = 0x80000000,
+@VintfStability
+interface IModuleChangeCallback {
+  oneway void onAudioPortsChanged(in android.media.audio.common.AudioPort[] audioPorts);
 }
