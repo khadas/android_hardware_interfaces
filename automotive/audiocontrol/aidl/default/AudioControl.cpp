@@ -162,6 +162,11 @@ AudioGain createGain(int32_t mode, AudioChannelLayout channelMask, int32_t minVa
 }
 }  // namespace
 
+
+AudioControl::AudioControl () {
+    mAudioControlImpl = std::make_unique<AudioControlImpl>();
+}
+
 ndk::ScopedAStatus AudioControl::registerFocusListener(
         const shared_ptr<IFocusListener>& in_listener) {
     LOG(DEBUG) << "registering focus listener";
@@ -191,8 +196,14 @@ ndk::ScopedAStatus AudioControl::setFadeTowardFront(float value) {
         LOG(INFO) << "Fader set to " << value;
         return ndk::ScopedAStatus::ok();
     }
-
     LOG(ERROR) << "Fader value out of range -1 to 1 at " << value;
+    return ndk::ScopedAStatus::ok();
+}
+
+ndk::ScopedAStatus AudioControl::setVolume(const string& address, int32_t value) {
+    LOG(ERROR) << "set volume: address " << address.c_str() << " value "
+              << value;
+    mAudioControlImpl->setVolume(address.c_str(), value);
     return ndk::ScopedAStatus::ok();
 }
 
@@ -666,7 +677,7 @@ binder_status_t AudioControl::parseAudioGains(int fd, const std::string& stringG
     }
 
     // iterate over injected AudioGains
-    for (int index = 0; index < vecGain.size(); index += kAudioGainSize) {
+    for (int index = 0; index < (int)vecGain.size(); index += kAudioGainSize) {
         int32_t mode;
         if (!safelyParseInt(vecGain[index], &mode)) {
             dprintf(fd, "Non-integer index provided with request: %s\n", vecGain[index].c_str());

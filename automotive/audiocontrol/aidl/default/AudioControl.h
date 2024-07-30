@@ -34,6 +34,7 @@
 #include <aidl/android/media/audio/common/AudioGainMode.h>
 #include <aidl/android/media/audio/common/AudioIoFlags.h>
 #include <aidl/android/media/audio/common/AudioOutputFlags.h>
+#include <AudioControlImpl.h>
 
 namespace aidl::android::hardware::automotive::audiocontrol {
 
@@ -42,6 +43,7 @@ namespace audiomediacommon = ::aidl::android::media::audio::common;
 
 class AudioControl : public BnAudioControl {
   public:
+    AudioControl();
     ndk::ScopedAStatus onAudioFocusChange(const std::string& in_usage, int32_t in_zoneId,
                                           AudioFocusChange in_focusChange) override;
     ndk::ScopedAStatus onDevicesToDuckChange(
@@ -52,6 +54,7 @@ class AudioControl : public BnAudioControl {
             const std::shared_ptr<IFocusListener>& in_listener) override;
     ndk::ScopedAStatus setBalanceTowardRight(float in_value) override;
     ndk::ScopedAStatus setFadeTowardFront(float in_value) override;
+    ndk::ScopedAStatus setVolume(const std::string& address, int32_t value);
     ndk::ScopedAStatus onAudioFocusChangeWithMetaData(
             const audiohalcommon::PlaybackTrackMetadata& in_playbackMetaData, int32_t in_zoneId,
             AudioFocusChange in_focusChange) override;
@@ -63,7 +66,6 @@ class AudioControl : public BnAudioControl {
     ndk::ScopedAStatus setModuleChangeCallback(
             const std::shared_ptr<IModuleChangeCallback>& in_callback) override;
     ndk::ScopedAStatus clearModuleChangeCallback() override;
-
     binder_status_t dump(int fd, const char** args, uint32_t numArgs) override;
 
   private:
@@ -80,6 +82,7 @@ class AudioControl : public BnAudioControl {
     std::shared_ptr<IAudioGainCallback> mAudioGainCallback = nullptr;
 
     std::shared_ptr<IModuleChangeCallback> mModuleChangeCallback = nullptr;
+    std::shared_ptr<AudioControlImpl> mAudioControlImpl = nullptr;
 
     binder_status_t cmdHelp(int fd) const;
     binder_status_t cmdRequestFocus(int fd, const char** args, uint32_t numArgs);

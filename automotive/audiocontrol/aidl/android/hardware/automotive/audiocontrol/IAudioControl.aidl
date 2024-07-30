@@ -206,4 +206,10 @@ interface IAudioControl {
      * @throws EX_UNSUPPORTED_OPERATION if dynamic audio configs are not supported.
      */
     void clearModuleChangeCallback();
+
+    /**
+     * Control the volume of the car speakers.
+     *
+     */
+    oneway void setVolume(in String address, in int value);
 }
