@@ -21,6 +21,28 @@ package {
     default_applicable_licenses: ["hardware_interfaces_license"],
 }
 
+//----rk-code----
+soong_config_module_type {
+    name: "rk_healthd_alarm_align_soong_cc_defaults",
+    module_type: "cc_defaults",
+    config_namespace: "rk_healthd_alarm_align",
+    bool_variables: ["rk_healthd_alarm_align_en"],
+    properties: ["cflags"],
+}
+
+rk_healthd_alarm_align_soong_cc_defaults {
+    name: "rk_healthd_alarm_align_cc_defaults",
+
+    soong_config_variables: {
+        rk_healthd_alarm_align_en: {
+            cflags: [
+                "-DRK_HEALTHD_ALARM_ALIGN",
+            ],
+        },
+    },
+}
+//---------------
+
 cc_library_static {
     name: "libhealthloop",
     vendor_available: true,
@@ -40,5 +62,9 @@ cc_library_static {
     ],
     export_include_dirs: [
         "include",
+    ],
+    //----rk-code----
+    defaults: [
+        "rk_healthd_alarm_align_cc_defaults"
     ],
 }

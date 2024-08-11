@@ -80,13 +80,33 @@ int HealthLoop::RegisterEvent(int fd, BoundFunction func, EventWakeup wakeup) {
 
 void HealthLoop::WakeAlarmSetInterval(int interval) {
     struct itimerspec itval;
+//----rk-code----
+#ifdef RK_HEALTHD_ALARM_ALIGN
+    struct timespec now;
+#endif
+//---------------
 
     if (wakealarm_fd_ == -1) return;
 
     wakealarm_wake_interval_ = interval;
 
     if (interval == -1) interval = 0;
-
+//----rk-code----
+#ifdef RK_HEALTHD_ALARM_ALIGN
+    /*
+     * Rtc driver specifically supports second level alarm,
+     * if the 6m30s alarm will be split to two alarms is
+     * 6m and 30s. so now align to 7m, just one alarm to
+     * save power.
+     */
+    if (interval % 60 == 0  && interval > 240 ) {
+        clock_gettime(CLOCK_REALTIME, &now);
+        interval = (now.tv_sec + interval)/60*60 - now.tv_sec;
+        wakealarm_wake_interval_ = interval;
+        KLOG_ERROR(LOG_TAG, "timerfd_settime interval %d \n", interval);
+    }
+#endif
+//---------------
     itval.it_interval.tv_sec = interval;
     itval.it_interval.tv_nsec = 0;
     itval.it_value.tv_sec = interval;
@@ -174,7 +194,11 @@ void HealthLoop::WakeAlarmEvent(uint32_t /*epevents*/) {
         KLOG_ERROR(LOG_TAG, "wakealarm_event: read wakealarm fd failed\n");
         return;
     }
-
+//----rk-code----
+#ifdef RK_HEALTHD_ALARM_ALIGN
+    KLOG_ERROR(LOG_TAG, "WakeAlarmEvent\n");
+#endif
+//---------------
     PeriodicChores();
 }
 
