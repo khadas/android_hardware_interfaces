@@ -29,6 +29,8 @@
 #include "../../3.2/default/include/convert.h"
 #include "ExternalCameraDevice_3_4.h"
 
+#include <cutils/properties.h>
+
 #ifdef HDMI_ENABLE
 #ifdef HDMI_SUBVIDEO_ENABLE
 #include <rockchip/hardware/hdmi/1.0/IHdmi.h>
@@ -450,9 +452,20 @@ status_t ExternalCameraDevice::initDefaultCharsKeys(
            &opticalStabilizationMode, 1);
 
     //const uint8_t facing = ANDROID_LENS_FACING_EXTERNAL;
-	const char* dev = mCameraId.c_str();
-	int index = (int) (*(dev + (strlen(dev) - 1)) - '0');
-	const uint8_t facing = (index / 2) % 2 ? ANDROID_LENS_FACING_FRONT : ANDROID_LENS_FACING_BACK;
+//	const char* dev = mCameraId.c_str();
+//	int index = (int) (*(dev + (strlen(dev) - 1)) - '0');
+
+    uint8_t facing = ANDROID_LENS_FACING_EXTERNAL;
+    char property[PROPERTY_VALUE_MAX];
+    property_get("persist.sys.camera_usb_faceback", property, NULL);
+    if (strstr(property, "1")) {
+      facing =  ANDROID_LENS_FACING_BACK;
+    } else if (strstr(property, "0")) {
+      facing = ANDROID_LENS_FACING_FRONT;
+    } else {
+      facing = ANDROID_LENS_FACING_EXTERNAL;
+    }
+    ALOGE("%s: facing = %d ", __FUNCTION__, facing);
 
     UPDATE(ANDROID_LENS_FACING, &facing, 1);
 
@@ -509,8 +522,11 @@ status_t ExternalCameraDevice::initDefaultCharsKeys(
     // natural display orientation. For devices with natural landscape display (ex: tablet/TV), the
     // orientation should be 0. For devices with natural portrait display (phone), the orientation
     // should be 270.
-    const int32_t orientation = mCfg.orientation;
-    UPDATE(ANDROID_SENSOR_ORIENTATION, &orientation, 1);
+//    const int32_t orientation = mCfg.orientation;
+     property_get("persist.sys.camera_usb_orientation", property, "0");
+     int32_t orientation = atoi(property);
+     ALOGE("%s: orientation = %d ", __FUNCTION__, orientation);
+     UPDATE(ANDROID_SENSOR_ORIENTATION, &orientation, 1);
 
     // android.shading
     const uint8_t availabeMode = ANDROID_SHADING_MODE_OFF;
