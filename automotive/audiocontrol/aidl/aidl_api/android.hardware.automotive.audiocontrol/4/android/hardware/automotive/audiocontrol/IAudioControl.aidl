@@ -49,4 +49,9 @@ interface IAudioControl {
   void setModuleChangeCallback(in android.hardware.automotive.audiocontrol.IModuleChangeCallback callback);
   void clearModuleChangeCallback();
   oneway void setVolume(in String address, in int value);
+  int setEffectMode(int mode);
+  int setEffectConfig(int bass, int mid, int treble);
+  String getDspVersion();
+  void updateDsp(int mode);
+  oneway void registerDspUpdateProgressCallback(in android.hardware.automotive.audiocontrol.IUpdateDspCallback callback);
 }

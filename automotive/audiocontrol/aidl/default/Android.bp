@@ -41,7 +41,7 @@ cc_binary {
         "libhardware",
     ],
     header_libs: [
-        "librkdsp_headers",
+        "libaudiocontrol_headers",
     ],
 
     cflags: ["-Wno-unused-function"],

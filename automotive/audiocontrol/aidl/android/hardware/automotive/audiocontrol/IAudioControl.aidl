@@ -52,6 +52,7 @@ import android.hardware.automotive.audiocontrol.DuckingInfo;
 import android.hardware.automotive.audiocontrol.IAudioGainCallback;
 import android.hardware.automotive.audiocontrol.IFocusListener;
 import android.hardware.automotive.audiocontrol.IModuleChangeCallback;
+import android.hardware.automotive.audiocontrol.IUpdateDspCallback;
 import android.hardware.automotive.audiocontrol.MutingInfo;
 import android.hardware.automotive.audiocontrol.Reasons;
 
@@ -209,7 +210,48 @@ interface IAudioControl {
 
     /**
      * Control the volume of the car speakers.
+     * @param address control address.
+     * @param value volume index.
      *
      */
     oneway void setVolume(in String address, in int value);
+
+    /**
+     * Control the effect mode.
+     *
+     * @param mode The preferred effect mode.
+     * @return "1" on success.
+     */
+    int setEffectMode(int mode);
+
+    /**
+     * Control the effect configurations.
+     *
+     * @param bass Bass control.
+     * @param mid Mid control.
+     * @param treble Treble control.
+     * @return "1" on success.
+     */
+    int setEffectConfig(int bass, int mid, int treble);
+
+    /**
+     * Get the current DSP version.
+     * @return The current DSP version.
+     */
+    String getDspVersion();
+
+    /**
+     * Update the DSP.
+     *
+     * @param mode The preferred updating mode.
+     */
+    void updateDsp(int mode);
+
+    /**
+     * This will get called every time the DSP updating progress changed.
+     *
+     * @param callback The callback interface on which the onDspUpadateProgessChanged() method will be
+     *     called upon the DSP updating progress changed.
+     */
+    oneway void registerDspUpdateProgressCallback(in IUpdateDspCallback callback);
 }

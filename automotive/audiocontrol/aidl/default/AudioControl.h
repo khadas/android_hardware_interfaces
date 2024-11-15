@@ -22,6 +22,7 @@
 #include <aidl/android/hardware/automotive/audiocontrol/DuckingInfo.h>
 #include <aidl/android/hardware/automotive/audiocontrol/IAudioGainCallback.h>
 #include <aidl/android/hardware/automotive/audiocontrol/IModuleChangeCallback.h>
+#include <aidl/android/hardware/automotive/audiocontrol/IUpdateDspCallback.h>
 #include <aidl/android/hardware/automotive/audiocontrol/MutingInfo.h>
 #include <aidl/android/hardware/automotive/audiocontrol/Reasons.h>
 
@@ -55,6 +56,10 @@ class AudioControl : public BnAudioControl {
     ndk::ScopedAStatus setBalanceTowardRight(float in_value) override;
     ndk::ScopedAStatus setFadeTowardFront(float in_value) override;
     ndk::ScopedAStatus setVolume(const std::string& address, int32_t value);
+    ndk::ScopedAStatus setEffectMode(int mode, int32_t* _aidl_return);
+    ndk::ScopedAStatus setEffectConfig(int bass, int mid, int treble, int32_t* _aidl_return);
+    ndk::ScopedAStatus getDspVersion(std::string* _aidl_return);
+    ndk::ScopedAStatus updateDsp(int mode);
     ndk::ScopedAStatus onAudioFocusChangeWithMetaData(
             const audiohalcommon::PlaybackTrackMetadata& in_playbackMetaData, int32_t in_zoneId,
             AudioFocusChange in_focusChange) override;
@@ -65,6 +70,8 @@ class AudioControl : public BnAudioControl {
             const std::shared_ptr<IAudioGainCallback>& in_callback) override;
     ndk::ScopedAStatus setModuleChangeCallback(
             const std::shared_ptr<IModuleChangeCallback>& in_callback) override;
+    ndk::ScopedAStatus registerDspUpdateProgressCallback(
+            const std::shared_ptr<IUpdateDspCallback>& in_callback) override;
     ndk::ScopedAStatus clearModuleChangeCallback() override;
     binder_status_t dump(int fd, const char** args, uint32_t numArgs) override;
 

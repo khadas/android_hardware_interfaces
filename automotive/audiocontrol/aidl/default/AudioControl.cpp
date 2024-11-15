@@ -165,6 +165,7 @@ AudioGain createGain(int32_t mode, AudioChannelLayout channelMask, int32_t minVa
 
 AudioControl::AudioControl () {
     mAudioControlImpl = std::make_unique<AudioControlImpl>();
+    loadDspDefault();
 }
 
 ndk::ScopedAStatus AudioControl::registerFocusListener(
@@ -182,21 +183,20 @@ ndk::ScopedAStatus AudioControl::registerFocusListener(
 ndk::ScopedAStatus AudioControl::setBalanceTowardRight(float value) {
     if (isValidValue(value)) {
         // Just log in this default mock implementation
-        LOG(INFO) << "Balance set to " << value;
-        return ndk::ScopedAStatus::ok();
+        LOG(INFO) << "Balance set to value" << value;
+        mAudioControlImpl->setBalanceTowardRight(value);
     }
 
-    LOG(ERROR) << "Balance value out of range -1 to 1 at " << value;
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus AudioControl::setFadeTowardFront(float value) {
     if (isValidValue(value)) {
         // Just log in this default mock implementation
-        LOG(INFO) << "Fader set to " << value;
-        return ndk::ScopedAStatus::ok();
+        LOG(INFO) << "Fader set to value " << value;
+        mAudioControlImpl->setFadeTowardFront(value);
     }
-    LOG(ERROR) << "Fader value out of range -1 to 1 at " << value;
+
     return ndk::ScopedAStatus::ok();
 }
 
@@ -204,6 +204,33 @@ ndk::ScopedAStatus AudioControl::setVolume(const string& address, int32_t value)
     LOG(ERROR) << "set volume: address " << address.c_str() << " value "
               << value;
     mAudioControlImpl->setVolume(address.c_str(), value);
+    return ndk::ScopedAStatus::ok();
+}
+
+ndk::ScopedAStatus AudioControl::setEffectMode(int mode, int32_t* _aidl_return) {
+    LOG(ERROR) << "set Effect mode " << mode;
+    mAudioControlImpl->setEffectMode(mode);
+    *_aidl_return = 1;
+    return ndk::ScopedAStatus::ok();
+}
+
+ndk::ScopedAStatus AudioControl::setEffectConfig(int bass, int mid, int treble, int32_t* _aidl_return) {
+    LOG(ERROR) << "set  Effect Cofig base: " << bass << " mid: " << mid << " treble: " << treble;
+    mAudioControlImpl->setEffectConfig(bass, mid, treble);
+    *_aidl_return = 1;
+    return ndk::ScopedAStatus::ok();
+}
+
+ndk::ScopedAStatus AudioControl::getDspVersion(std::string* _aidl_return) {
+    std::string version = mAudioControlImpl->getDspVersion();
+    LOG(ERROR) << " version " << version;
+    *_aidl_return = version;
+    return ndk::ScopedAStatus::ok();
+}
+
+ndk::ScopedAStatus AudioControl::updateDsp(int mode) {
+    LOG(ERROR) << " updateDsp";
+    mAudioControlImpl->updateDsp(mode);
     return ndk::ScopedAStatus::ok();
 }
 
@@ -290,6 +317,13 @@ ndk::ScopedAStatus AudioControl::registerGainCallback(
     } else {
         LOG(ERROR) << "Unexpected nullptr for audio gain callback resulting in no-op.";
     }
+    return ndk::ScopedAStatus::ok();
+}
+
+ndk::ScopedAStatus AudioControl::registerDspUpdateProgressCallback(
+            const std::shared_ptr<IUpdateDspCallback>& in_callback) {
+    LOG(ERROR) << ": " << __func__;
+    mAudioControlImpl->registerUpdateCallback(in_callback);
     return ndk::ScopedAStatus::ok();
 }
 
