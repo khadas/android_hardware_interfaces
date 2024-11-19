@@ -126,7 +126,7 @@ class Gralloc0HalImpl : public Hal {
    protected:
     Error allocateOneBuffer(const mapper::V2_0::IMapper::BufferDescriptorInfo& info,
                             const native_handle_t** outBuffer, uint32_t* outStride) {
-        if (info.layerCount > 1 || (info.usage >> 32) != 0) {
+        if (info.layerCount > 1 ) {
             return Error::BAD_VALUE;
         }
 
