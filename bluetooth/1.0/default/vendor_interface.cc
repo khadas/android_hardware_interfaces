@@ -68,6 +68,8 @@ bool recent_activity_flag;
 VendorInterface* g_vendor_interface = nullptr;
 static VendorInterface vendor_interface;
 
+#define BLUEOOTH_RK_STATE_PROP "persist.bluetooth.profile.state"
+
 HC_BT_HDR* WrapPacketAndCopy(uint16_t event, const hidl_vec<uint8_t>& data) {
   size_t packet_size = data.size() + sizeof(HC_BT_HDR);
   HC_BT_HDR* packet = reinterpret_cast<HC_BT_HDR*>(new uint8_t[packet_size]);
@@ -334,6 +336,7 @@ void VendorInterface::Close() {
     ALOGW("VendorInterface is not allow close(%d)", vstate);
     return;
   }
+  property_set(BLUEOOTH_RK_STATE_PROP, "0");
   vstate = VENDOR_STATE_CLOSING;
   ALOGI("%s: VendorInterface::Close", __func__);
 
@@ -407,6 +410,11 @@ size_t VendorInterface::Send(uint8_t type, const uint8_t* data, size_t length) {
 
 void VendorInterface::OnFirmwareConfigured(uint8_t result) {
   ALOGD("%s result: %d", __func__, result);
+
+  if(result == 0)
+    property_set(BLUEOOTH_RK_STATE_PROP, "1");
+  else
+    property_set(BLUEOOTH_RK_STATE_PROP, "0");
 
   if (firmware_startup_timer_ != nullptr) {
     delete firmware_startup_timer_;
