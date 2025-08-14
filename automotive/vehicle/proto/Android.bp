@@ -28,6 +28,7 @@ cc_library_static {
         "//hardware/interfaces/automotive/vehicle:__subpackages__",
         "//device/generic/car/emulator:__subpackages__",
         "//hardware/rockchip/rvcam:__subpackages__",
+        "//hardware/rockchip/vehicle:__subpackages__",
     ],
     vendor: true,
     host_supported: true,
